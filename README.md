@@ -25,6 +25,41 @@ ESP32-based soil and environmental monitor. This repository hosts firmware and n
 	- Use an amplifier/interface board that outputs 0–3.3V analog; connect output to an ADC pin
 	- Calibrate with known buffer solutions; avoid direct probe wiring to ADC without appropriate circuitry
 
+**Wiring Sanity Checks**
+
+Before uploading code, verify your breadboard physically:
+- [ ] All modules powered at 3.3V (not 5V); use the ESP32 3V3 pin or breadboard + rail.
+- [ ] Common ground: ESP32 GND, all module GND pins, and breadboard - rail connected together.
+- [ ] I2C bus correctly wired in parallel (not daisy-chained in series):
+  - SDA from ESP32 GPIO21 -> both BME280 and OLED SDA pads (same net/wire)
+  - SCL from ESP32 GPIO22 -> both BME280 and OLED SCL pads (same net/wire)
+  - VCC from 3.3V -> all module VCC pads independently from the + rail
+  - GND from common ground -> all module GND pads independently from the - rail
+- [ ] BME280 VCC jumper set to 3.3V (if module has a selectable jumper).
+- [ ] USB data cable (not charge-only) connected to the USB-to-UART port on the ESP32.
+
+**Expected Outputs (from test sketches)**
+
+After wiring, upload and run each test in order:
+
+1. I2C Scanner
+   - Run `src/i2c_scanner.cpp` or equivalent I2C scan.
+   - Expected: `I2C device found at 0x3C` (OLED) and one of `0x76` or `0x77` (BME280).
+
+2. OLED Display Test
+   - Upload a simple U8g2 sketch that draws "Hello OLED 0x3C".
+   - Expected: Text appears on the OLED screen.
+
+3. BME280 Read Test
+   - Upload BME280 sketch that reads temperature, pressure, humidity.
+   - Expected: Serial output like `T: 24.5 °C  P: 1013.2 hPa  H: 45.3 %` repeating every 2 seconds.
+
+4. Soil Sensor ADC Test (after soil sensor is wired to GPIO36)
+   - Upload ADC test that reads raw analog values (0-4095).
+   - Expected: A value that changes (roughly 0-4095 range) when you touch/insert the sensor probe.
+
+If any test fails, go back and check the checklist above; most issues are wiring, VCC jumper, or USB cable.
+
 **Software / Build**
 - This project uses PlatformIO. Build and flash with the PlatformIO CLI (from the repository root):
 
