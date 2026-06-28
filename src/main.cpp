@@ -58,7 +58,6 @@ Readings readBME280() {
   r.temperature = bme.readTemperature();
   r.pressure = bme.readPressure() / 100.0F;
   r.humidity = bme.readHumidity();
-  
   return r;
 }
 
@@ -100,7 +99,7 @@ void displayReadings(const Readings& r) {
 
 void setup() {
   Serial.begin(115200);
-  delay(1000);
+  delay(100);
 
   initI2C();
   initDisplay();

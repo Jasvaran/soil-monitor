@@ -1,7 +1,10 @@
 // #include <Arduino.h>
 // #include <Wire.h>
+// // put function declarations here:
+
 
 // void setup() {
+//   // put your setup code here, to run once:
 //   Serial.begin(115200);
 //   Wire.begin(21, 22); // SDA, SCL
 //   delay(100);
@@ -9,10 +12,13 @@
 // }
 
 // void loop() {
+//   // put your main code here, to run repeatedly:
 //   byte error, address;
 //   int nDevices = 0;
 
 //   for (address = 1; address < 127; address++) {
+//     // The i2c_scanner uses the return value of the Write.endTransmisstion to see if
+//     // a device did acknowledge to the address.
 //     Wire.beginTransmission(address);
 //     error = Wire.endTransmission();
 
@@ -37,3 +43,5 @@
 //     Serial.println("done\n");
 //   delay(3000);
 // }
+
+// // put function definitions here:
