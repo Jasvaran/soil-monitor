@@ -7,6 +7,21 @@
 Adafruit_BME280 bme;
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
 
+const int SOIL_PIN = 33; // GPIO pin for soil moisture sensor
+const int DRY_VALUE = 2460; // ADC value for dry soil
+const int WET_VALUE = 1788; // ADC value for wet soil
+
+
+int readSoilRaw() {
+  long total = 0;
+
+  for (int i = 0; i < 10; i++){
+    total += analogRead(SOIL_PIN);
+    delay(10);
+  }
+  return total / 10;
+}
+
 struct Readings {
   float temperature;
   float pressure;
@@ -116,6 +131,8 @@ void setup() {
   }
 
   Serial.println("BME280 OK");
+
+  analogReadResolution(12); // Set ADC resolution to 12 bits
 }
 
 void loop() {
@@ -123,6 +140,17 @@ void loop() {
 
   printReadings(readings);
   displayReadings(readings);
+
+  int soilRaw = readSoilRaw();
+  
+  int moisturePercent = map(soilRaw, DRY_VALUE, WET_VALUE, 0, 100);
+  moisturePercent = constrain(moisturePercent, 0, 100);
+
+  Serial.print("Raw: ");
+  Serial.print(soilRaw);
+  Serial.print(" | Moisture: ");
+  Serial.print(moisturePercent);
+  Serial.println("%");
 
   delay(3000);
 }
