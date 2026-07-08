@@ -12,14 +12,25 @@ const int DRY_VALUE = 2460; // ADC value for dry soil
 const int WET_VALUE = 1788; // ADC value for wet soil
 
 
-int readSoilRaw() {
+struct SoilReadings {
+  int raw;
+  int moisturePercent;
+};
+
+SoilReadings readSoil() {
+  SoilReadings soil;
+
   long total = 0;
 
   for (int i = 0; i < 10; i++){
     total += analogRead(SOIL_PIN);
     delay(10);
   }
-  return total / 10;
+  soil.raw = total / 10;
+  soil.moisturePercent = map(soil.raw, DRY_VALUE, WET_VALUE, 0, 100);
+  soil.moisturePercent = constrain(soil.moisturePercent, 0, 100);
+
+  return soil;
 }
 
 struct Readings {
@@ -78,7 +89,6 @@ Readings readBME280() {
 }
 
 void printReadings(const Readings& r) {
-  static unsigned long lastRead = 0;
   unsigned long now = millis();
   
   Serial.print("[");
@@ -96,21 +106,31 @@ void printReadings(const Readings& r) {
   Serial.println(" %");
 }
 
-void displayReadings(const Readings& r) {
+void displayDashboard(const Readings& r, const SoilReadings& soil){
   char line1[24];
   char line2[24];
   char line3[24];
-
+  char line4[24];
   snprintf(line1, sizeof(line1), "Temp: %.2f C", r.temperature);
   snprintf(line2, sizeof(line2), "Press: %.2f hPa", r.pressure);
   snprintf(line3, sizeof(line3), "Hum: %.2f %%", r.humidity);
+  snprintf(line4, sizeof(line4), "Soil: %d%%", soil.moisturePercent);
 
   u8g2.clearBuffer();
-  u8g2.drawStr(0, 12, "BME280 Readings");
-  u8g2.drawStr(0, 30, line1);
-  u8g2.drawStr(0, 45, line2);
-  u8g2.drawStr(0, 60, line3);
+  u8g2.drawStr(0, 10, "Env Monitor");
+  u8g2.drawStr(0, 24, line1);
+  u8g2.drawStr(0, 36, line2);
+  u8g2.drawStr(0, 48, line3);
+  u8g2.drawStr(0, 60, line4);
   u8g2.sendBuffer();
+}
+
+void printSoilReadings(const SoilReadings& soil){
+  Serial.print("Soil Raw: ");
+  Serial.print(soil.raw);
+  Serial.print(" | Moisture: ");
+  Serial.print(soil.moisturePercent);
+  Serial.println("%");
 }
 
 void setup() {
@@ -137,20 +157,12 @@ void setup() {
 
 void loop() {
   Readings readings = readBME280();
+  SoilReadings soil = readSoil();
 
   printReadings(readings);
-  displayReadings(readings);
+  printSoilReadings(soil);
+  displayDashboard(readings, soil);
 
-  int soilRaw = readSoilRaw();
-  
-  int moisturePercent = map(soilRaw, DRY_VALUE, WET_VALUE, 0, 100);
-  moisturePercent = constrain(moisturePercent, 0, 100);
-
-  Serial.print("Raw: ");
-  Serial.print(soilRaw);
-  Serial.print(" | Moisture: ");
-  Serial.print(moisturePercent);
-  Serial.println("%");
 
   delay(3000);
 }
