@@ -10,12 +10,56 @@ U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
 const int SOIL_PIN = 33; // GPIO pin for soil moisture sensor
 const int DRY_VALUE = 2460; // ADC value for dry soil
 const int WET_VALUE = 1788; // ADC value for wet soil
+const int PUMP_PIN = 18; // GPIO pin for water pump control
+const int PUMP_ON = HIGH;
+const int PUMP_OFF = LOW;
+const int WATERING_THRESHOLD = 30; // Moisture percentage threshold to trigger watering
+const int RESET_THRESHOLD = 40; // Moisture percentage threshold to stop watering
+const unsigned long PUMP_DURATION_MS = 2000; // Duration to run the pump in milliseconds
+
+bool wateringTriggered = false;
+
+void pumpOn(){
+  digitalWrite(PUMP_PIN, PUMP_ON);
+}
+
+void pumpOff(){
+  digitalWrite(PUMP_PIN, PUMP_OFF);
+}
+
+void testPump(){
+  Serial.println("Pump On...");
+  pumpOn();
+  delay(2000);
+  Serial.println("Pump Off...");
+  pumpOff();
+  delay(5000);
+}
 
 
 struct SoilReadings {
   int raw;
   int moisturePercent;
 };
+
+void waterSoilIfNeeded(const SoilReadings& soil) {
+  // sensor has become dry
+  if (soil.moisturePercent < WATERING_THRESHOLD && !wateringTriggered) {
+    Serial.println("DRY detected, activating pump...");
+    pumpOn();
+    delay(PUMP_DURATION_MS);
+    pumpOff();
+
+    Serial.println("Pump OFF");
+    wateringTriggered = true;
+  }
+
+  // sensor is wet again, reset the trigger
+  if (soil.moisturePercent > RESET_THRESHOLD && wateringTriggered) {
+    Serial.println("Soil is wet again, resetting trigger.");
+    wateringTriggered = false;
+  }
+}
 
 SoilReadings readSoil() {
   SoilReadings soil;
@@ -153,6 +197,11 @@ void setup() {
   Serial.println("BME280 OK");
 
   analogReadResolution(12); // Set ADC resolution to 12 bits
+
+  pinMode(PUMP_PIN, OUTPUT);
+  pumpOff(); // Ensure pump is off at startup
+  Serial.println("Pump test starting...");
+  delay(3000);
 }
 
 void loop() {
@@ -163,6 +212,7 @@ void loop() {
   printSoilReadings(soil);
   displayDashboard(readings, soil);
 
+  waterSoilIfNeeded(soil);
 
-  delay(3000);
+  delay(1000);
 }
